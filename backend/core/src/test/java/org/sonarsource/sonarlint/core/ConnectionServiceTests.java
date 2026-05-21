@@ -62,7 +62,7 @@ class ConnectionServiceTests {
   ConnectionService underTest;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     eventPublisher = mock(ApplicationEventPublisher.class);
   }
 
