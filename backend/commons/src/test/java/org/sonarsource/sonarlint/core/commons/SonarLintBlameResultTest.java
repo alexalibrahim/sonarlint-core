@@ -53,12 +53,12 @@ class SonarLintBlameResultTest {
   private Path projectDir;
 
   @BeforeEach
-  public void prepare() throws IOException, GitAPIException {
+  void prepare() throws IOException, GitAPIException {
     git = createRepository(projectDir);
   }
 
   @AfterEach
-  public void cleanup() throws IOException {
+  void cleanup() throws IOException {
     FileUtils.delete(projectDir.toFile(), RECURSIVE);
   }
 
