@@ -29,10 +29,12 @@ public class NoOpFileLinesContext implements FileLinesContext {
 
   @Override
   public void setStringValue(String metricKey, int line, String value) {
+    // No-op implementation: line metrics are not stored
   }
 
   @Override
   public void save() {
+    // no-op: line metrics are not stored in SonarLint
   }
 
 }
