@@ -152,37 +152,7 @@ public class FileMetadata {
     var afterCR = false;
     while (i != -1) {
       c = (char) i;
-      if (afterCR) {
-        for (CharHandler handler : handlers) {
-          if (c == CARRIAGE_RETURN) {
-            handler.newLine();
-            handler.handleAll(c);
-          } else if (c == LINE_FEED) {
-            handler.handleAll(c);
-            handler.newLine();
-          } else {
-            handler.newLine();
-            handler.handleIgnoreEoL(c);
-            handler.handleAll(c);
-          }
-        }
-        afterCR = c == CARRIAGE_RETURN;
-      } else if (c == LINE_FEED) {
-        for (CharHandler handler : handlers) {
-          handler.handleAll(c);
-          handler.newLine();
-        }
-      } else if (c == CARRIAGE_RETURN) {
-        afterCR = true;
-        for (CharHandler handler : handlers) {
-          handler.handleAll(c);
-        }
-      } else {
-        for (CharHandler handler : handlers) {
-          handler.handleIgnoreEoL(c);
-          handler.handleAll(c);
-        }
-      }
+      afterCR = processChar(c, afterCR, handlers);
       i = reader.read();
     }
     for (CharHandler handler : handlers) {
@@ -190,6 +160,47 @@ public class FileMetadata {
         handler.newLine();
       }
       handler.eof();
+    }
+  }
+
+  /**
+   * Dispatches a single character to the handlers.
+   * @return true if the processed character is a carriage return
+   */
+  private static boolean processChar(char c, boolean afterCR, CharHandler[] handlers) {
+    if (afterCR) {
+      handleCharAfterCR(c, handlers);
+    } else if (c == LINE_FEED) {
+      for (CharHandler handler : handlers) {
+        handler.handleAll(c);
+        handler.newLine();
+      }
+    } else if (c == CARRIAGE_RETURN) {
+      for (CharHandler handler : handlers) {
+        handler.handleAll(c);
+      }
+    } else {
+      for (CharHandler handler : handlers) {
+        handler.handleIgnoreEoL(c);
+        handler.handleAll(c);
+      }
+    }
+    return c == CARRIAGE_RETURN;
+  }
+
+  private static void handleCharAfterCR(char c, CharHandler[] handlers) {
+    for (CharHandler handler : handlers) {
+      if (c == CARRIAGE_RETURN) {
+        handler.newLine();
+        handler.handleAll(c);
+      } else if (c == LINE_FEED) {
+        handler.handleAll(c);
+        handler.newLine();
+      } else {
+        handler.newLine();
+        handler.handleIgnoreEoL(c);
+        handler.handleAll(c);
+      }
     }
   }
 

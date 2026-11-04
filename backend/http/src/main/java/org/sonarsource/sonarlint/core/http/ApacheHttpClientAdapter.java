@@ -115,66 +115,12 @@ class ApacheHttpClientAdapter implements HttpClient {
       .setResponseTimeout(Timeout.ZERO_MILLISECONDS)
       .build());
 
-    if (usernameOrToken != null) {
-      if (shouldUseBearer) {
-        request.setHeader(AUTHORIZATION_HEADER, bearer(usernameOrToken));
-      } else {
-        request.setHeader(AUTHORIZATION_HEADER, basic(usernameOrToken, Objects.requireNonNullElse(password, "")));
-      }
-    }
+    setAuthorizationHeader(request);
     request.setHeader("Accept", "text/event-stream");
     connected = false;
     var cancelled = new AtomicBoolean();
     var httpFuture = apacheClient.execute(new BasicRequestProducer(request, null),
-      new AbstractCharResponseConsumer<>() {
-        @Override
-        public void releaseResources() {
-          // should we close something ?
-        }
-
-        @Override
-        protected int capacityIncrement() {
-          return Integer.MAX_VALUE;
-        }
-
-        @Override
-        protected void data(CharBuffer src, boolean endOfStream) {
-          if (cancelled.get()) {
-            throw new CancellationException();
-          }
-          if (connected) {
-            messageConsumer.accept(src.toString());
-          } else {
-            var possiblyErrorMessage = src.toString();
-            if (!possiblyErrorMessage.isEmpty()) {
-              LOG.debug("Received event-stream data while not connected: " + possiblyErrorMessage);
-            }
-          }
-        }
-
-        @Override
-        protected void start(HttpResponse httpResponse, ContentType contentType) {
-          if (httpResponse.getCode() < 200 || httpResponse.getCode() >= 300) {
-            connectionListener.onError(httpResponse.getCode());
-          } else {
-            connected = true;
-            connectionListener.onConnected();
-          }
-        }
-
-        @Override
-        protected Object buildResult() {
-          return null;
-        }
-
-        @Override
-        public void failed(Exception cause) {
-          if (cause instanceof CancellationException || cause instanceof InterruptedIOException) {
-            return;
-          }
-          LOG.error("Stream failed", cause);
-        }
-      }, new FutureCallback<>() {
+      createEventStreamConsumer(connectionListener, messageConsumer, cancelled), new FutureCallback<>() {
 
         @Override
         public void completed(Object result) {
@@ -201,6 +147,69 @@ class ApacheHttpClientAdapter implements HttpClient {
       });
 
     return new HttpAsyncRequest(httpFuture);
+  }
+
+  private AbstractCharResponseConsumer<Object> createEventStreamConsumer(HttpConnectionListener connectionListener, Consumer<String> messageConsumer,
+    AtomicBoolean cancelled) {
+    return new AbstractCharResponseConsumer<>() {
+      @Override
+      public void releaseResources() {
+        // should we close something ?
+      }
+
+      @Override
+      protected int capacityIncrement() {
+        return Integer.MAX_VALUE;
+      }
+
+      @Override
+      protected void data(CharBuffer src, boolean endOfStream) {
+        if (cancelled.get()) {
+          throw new CancellationException();
+        }
+        if (connected) {
+          messageConsumer.accept(src.toString());
+        } else {
+          var possiblyErrorMessage = src.toString();
+          if (!possiblyErrorMessage.isEmpty()) {
+            LOG.debug("Received event-stream data while not connected: " + possiblyErrorMessage);
+          }
+        }
+      }
+
+      @Override
+      protected void start(HttpResponse httpResponse, ContentType contentType) {
+        if (httpResponse.getCode() < 200 || httpResponse.getCode() >= 300) {
+          connectionListener.onError(httpResponse.getCode());
+        } else {
+          connected = true;
+          connectionListener.onConnected();
+        }
+      }
+
+      @Override
+      protected Object buildResult() {
+        return null;
+      }
+
+      @Override
+      public void failed(Exception cause) {
+        if (cause instanceof CancellationException || cause instanceof InterruptedIOException) {
+          return;
+        }
+        LOG.error("Stream failed", cause);
+      }
+    };
+  }
+
+  private void setAuthorizationHeader(SimpleHttpRequest request) {
+    if (usernameOrToken != null) {
+      if (shouldUseBearer) {
+        request.setHeader(AUTHORIZATION_HEADER, bearer(usernameOrToken));
+      } else {
+        request.setHeader(AUTHORIZATION_HEADER, basic(usernameOrToken, Objects.requireNonNullElse(password, "")));
+      }
+    }
   }
 
   private class CompletableFutureWrappingFuture extends CompletableFuture<HttpClient.Response> {
