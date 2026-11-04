@@ -35,8 +35,8 @@ public class ProjectStoragePaths {
     var encoded = Hex.encodeHexString(name.getBytes(StandardCharsets.UTF_8));
     if (encoded.length() > MAX_FOLDER_NAME_SIZE) {
       // Most FS will not support a folder name greater than 255
-      var md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(name);
-      return encoded.substring(0, MAX_FOLDER_NAME_SIZE - md5.length()) + md5;
+      var sha256 = org.apache.commons.codec.digest.DigestUtils.sha256Hex(name);
+      return encoded.substring(0, MAX_FOLDER_NAME_SIZE - sha256.length()) + sha256;
     }
     return encoded;
   }

@@ -165,7 +165,8 @@ public class SonarLintInputFile implements InputFile {
   @Override
   public String md5Hash() {
     try {
-      return DigestUtils.md5Hex(contents());
+      // MD5 is required by the InputFile#md5Hash() API contract and is only used for file fingerprinting, not in a security-sensitive context
+      return DigestUtils.md5Hex(contents()); // NOSONAR
     } catch (IOException e) {
       throw new IllegalStateException("Unable to compute md5Hash for " + uri(), e);
     }

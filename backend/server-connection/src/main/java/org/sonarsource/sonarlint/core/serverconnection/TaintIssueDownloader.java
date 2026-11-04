@@ -248,7 +248,7 @@ public class TaintIssueDownloader {
 
   static String hash(String codeSnippet) {
     String codeSnippetWithoutWhitespaces = MATCH_ALL_WHITESPACES.matcher(codeSnippet).replaceAll("");
-    return DigestUtils.md5Hex(codeSnippetWithoutWhitespaces);
+    return DigestUtils.sha256Hex(codeSnippetWithoutWhitespaces);
   }
 
   private static TextRangeWithHash convertTextRangeFromWs(TextRange textRange, String hash) {
