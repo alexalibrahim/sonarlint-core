@@ -38,6 +38,7 @@ import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.analysis.api.Issue;
 import org.sonarsource.sonarlint.core.analysis.api.TriggerType;
 import org.sonarsource.sonarlint.core.analysis.container.global.ModuleRegistry;
+import org.sonarsource.sonarlint.core.analysis.container.module.ModuleContainer;
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage;
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
 import org.sonarsource.sonarlint.core.commons.monitoring.Trace;
@@ -165,7 +166,6 @@ public class AnalyzeCommand extends Command {
       // if not found, means we are outside any module (e.g. single file analysis on VSCode)
       moduleContainer = moduleRegistry.createTransientContainer(configuration.inputFiles());
     }
-    Throwable originalException = null;
     if (trace != null) {
       trace.setData("filesCount", configuration.inputFiles().size());
       trace.setData("languages", configuration.inputFiles().stream()
@@ -174,31 +174,33 @@ public class AnalyzeCommand extends Command {
         .map(SonarLanguage::getSonarLanguageKey)
         .toList());
     }
+    AnalysisResults result;
     try {
-      var result = moduleContainer.analyze(configuration, issueListener, progressIndicator, trace);
+      result = moduleContainer.analyze(configuration, issueListener, progressIndicator, trace);
       if (trace != null) {
         trace.setData("failedFilesCount", result.failedAnalysisFiles().size());
         trace.finishSuccessfully();
       }
       result.setDuration(Duration.ofMillis(System.currentTimeMillis() - startTime));
-      return result;
     } catch (Throwable e) {
-      originalException = e;
       if (trace != null) {
         trace.finishExceptionally(e);
       }
-      throw e;
-    } finally {
       try {
-        if (moduleContainer.isTransient()) {
-          moduleContainer.stopComponents();
-        }
-      } catch (Exception e) {
-        if (originalException != null) {
-          e.addSuppressed(originalException);
-        }
-        throw e;
+        stopIfTransient(moduleContainer);
+      } catch (Exception stopException) {
+        stopException.addSuppressed(e);
+        throw stopException;
       }
+      throw e;
+    }
+    stopIfTransient(moduleContainer);
+    return result;
+  }
+
+  private static void stopIfTransient(ModuleContainer moduleContainer) {
+    if (moduleContainer.isTransient()) {
+      moduleContainer.stopComponents();
     }
   }
 

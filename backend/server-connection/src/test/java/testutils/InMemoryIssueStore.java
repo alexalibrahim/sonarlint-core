@@ -245,8 +245,9 @@ public class InMemoryIssueStore implements ProjectServerIssueStore {
   }
 
   @Override
-  public ServerIssue<?> getIssue(String issueKey) {
-    return issuesByKey.get(issueKey);
+  @SuppressWarnings("unchecked")
+  public <G extends ServerIssue<G>> G getIssue(String issueKey) {
+    return (G) issuesByKey.get(issueKey);
   }
 
   @Override

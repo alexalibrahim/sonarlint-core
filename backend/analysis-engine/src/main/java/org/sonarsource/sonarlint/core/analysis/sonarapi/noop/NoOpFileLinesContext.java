@@ -25,6 +25,7 @@ public class NoOpFileLinesContext implements FileLinesContext {
 
   @Override
   public void setIntValue(String metricKey, int line, int value) {
+    // no-op: file line metrics are not used
   }
 
   @Override
