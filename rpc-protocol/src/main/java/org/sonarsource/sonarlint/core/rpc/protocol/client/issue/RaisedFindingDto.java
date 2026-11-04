@@ -48,20 +48,47 @@ public abstract class RaisedFindingDto {
   private final String ruleDescriptionContextKey;
 
   protected RaisedFindingDto(UUID id, @Nullable String serverKey, String ruleKey, String primaryMessage, Either<StandardModeDetails, MQRModeDetails> severityMode,
-    Instant introductionDate, boolean isOnNewCode, boolean resolved, @Nullable TextRangeDto textRange, List<IssueFlowDto> flows, List<QuickFixDto> quickFixes,
-    @Nullable String ruleDescriptionContextKey) {
+    FindingStatus status, FindingLocation location) {
     this.id = id;
     this.serverKey = serverKey;
     this.ruleKey = ruleKey;
     this.primaryMessage = primaryMessage;
     this.severityMode = severityMode;
-    this.introductionDate = introductionDate;
-    this.isOnNewCode = isOnNewCode;
-    this.resolved = resolved;
-    this.textRange = textRange;
-    this.flows = flows;
-    this.quickFixes = quickFixes;
-    this.ruleDescriptionContextKey = ruleDescriptionContextKey;
+    this.introductionDate = status.introductionDate;
+    this.isOnNewCode = status.isOnNewCode;
+    this.resolved = status.resolved;
+    this.textRange = location.textRange;
+    this.flows = location.flows;
+    this.quickFixes = location.quickFixes;
+    this.ruleDescriptionContextKey = location.ruleDescriptionContextKey;
+  }
+
+  protected static final class FindingStatus {
+    private final Instant introductionDate;
+    private final boolean isOnNewCode;
+    private final boolean resolved;
+
+    public FindingStatus(Instant introductionDate, boolean isOnNewCode, boolean resolved) {
+      this.introductionDate = introductionDate;
+      this.isOnNewCode = isOnNewCode;
+      this.resolved = resolved;
+    }
+  }
+
+  protected static final class FindingLocation {
+    @Nullable
+    private final TextRangeDto textRange;
+    private final List<IssueFlowDto> flows;
+    private final List<QuickFixDto> quickFixes;
+    @Nullable
+    private final String ruleDescriptionContextKey;
+
+    public FindingLocation(@Nullable TextRangeDto textRange, List<IssueFlowDto> flows, List<QuickFixDto> quickFixes, @Nullable String ruleDescriptionContextKey) {
+      this.textRange = textRange;
+      this.flows = flows;
+      this.quickFixes = quickFixes;
+      this.ruleDescriptionContextKey = ruleDescriptionContextKey;
+    }
   }
 
   public UUID getId() {
