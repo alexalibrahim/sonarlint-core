@@ -145,16 +145,10 @@ public class MultivalueProperty {
       if (!inQuotes && isSeparator) {
         // exiting field (may already be unset)
         inField = false;
-        if (resI > 0) {
-          resI = retroTrim(res, resI);
-        }
-      } else {
-        boolean isTrimmed = !inQuotes && istrimmable(chars[i]);
-        if (isTrimmed && !inField) {
-          // we haven't met any non trimmable char since the last separator yet
-          continue;
-        }
-
+        // retroTrim is a no-op when resI is 0
+        resI = retroTrim(res, resI);
+      } else if (inQuotes || inField || !istrimmable(chars[i])) {
+        // otherwise, we haven't met any non trimmable char since the last separator yet and the char is skipped
         boolean isEscape = isEscapeChar(chars[i]);
         if (isEscape) {
           inQuotes = !inQuotes;

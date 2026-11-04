@@ -45,6 +45,7 @@ import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.net.URIBuilder;
 import org.sonarsource.sonarlint.core.SonarCloudActiveEnvironment;
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
+import org.sonarsource.sonarlint.core.commons.progress.SonarLintCancelMonitor;
 import org.sonarsource.sonarlint.core.event.FixSuggestionReceivedEvent;
 import org.sonarsource.sonarlint.core.file.PathTranslationService;
 import org.sonarsource.sonarlint.core.fs.ClientFileSystemService;
@@ -117,31 +118,36 @@ public class ShowFixSuggestionRequestHandler implements HttpRequestHandler {
       showFixSuggestionQuery.projectKey, origin,
       (connectionId, boundScopes, configScopeId, cancelMonitor) -> {
         if (configScopeId != null) {
-          var branchToMatch = showFixSuggestionQuery.branch;
-          if (branchToMatch == null) {
-            branchToMatch = sonarProjectBranchesSynchronizationService.findMainBranch(connectionId, showFixSuggestionQuery.projectKey,
-              cancelMonitor);
-          }
-          var localBranchMatchesRequesting =
-            client.matchProjectBranch(new MatchProjectBranchParams(configScopeId, branchToMatch)).join().isBranchMatched();
-          if (!localBranchMatchesRequesting) {
-            client.showMessage(new ShowMessageParams(MessageType.ERROR,
-              "Attempted to show a fix suggestion from branch '" + StringEscapeUtils.escapeHtml(branchToMatch) + "', " +
-                "which is different from the currently checked-out branch.\nPlease switch to the correct branch and try again."));
-            return;
-          }
-
-          if (doesClientFileExists(configScopeId, showFixSuggestionQuery.fixSuggestion.fileEdit.path, boundScopes)) {
-            showFixSuggestionForScope(configScopeId, showFixSuggestionQuery.issueKey, showFixSuggestionQuery.fixSuggestion);
-          } else {
-            client.showMessage(new ShowMessageParams(MessageType.ERROR, "Attempted to show a fix suggestion for a file that is " +
-              "not known by SonarQube for IDE"));
-          }
+          handleBoundScope(showFixSuggestionQuery, connectionId, boundScopes, configScopeId, cancelMonitor);
         }
       });
 
     response.setCode(HttpStatus.SC_OK);
     response.setEntity(new StringEntity("OK"));
+  }
+
+  private void handleBoundScope(ShowFixSuggestionQuery showFixSuggestionQuery, String connectionId, Collection<String> boundScopes,
+    String configScopeId, SonarLintCancelMonitor cancelMonitor) {
+    var branchToMatch = showFixSuggestionQuery.branch;
+    if (branchToMatch == null) {
+      branchToMatch = sonarProjectBranchesSynchronizationService.findMainBranch(connectionId, showFixSuggestionQuery.projectKey,
+        cancelMonitor);
+    }
+    var localBranchMatchesRequesting =
+      client.matchProjectBranch(new MatchProjectBranchParams(configScopeId, branchToMatch)).join().isBranchMatched();
+    if (!localBranchMatchesRequesting) {
+      client.showMessage(new ShowMessageParams(MessageType.ERROR,
+        "Attempted to show a fix suggestion from branch '" + StringEscapeUtils.escapeHtml(branchToMatch) + "', " +
+          "which is different from the currently checked-out branch.\nPlease switch to the correct branch and try again."));
+      return;
+    }
+
+    if (doesClientFileExists(configScopeId, showFixSuggestionQuery.fixSuggestion.fileEdit.path, boundScopes)) {
+      showFixSuggestionForScope(configScopeId, showFixSuggestionQuery.issueKey, showFixSuggestionQuery.fixSuggestion);
+    } else {
+      client.showMessage(new ShowMessageParams(MessageType.ERROR, "Attempted to show a fix suggestion for a file that is " +
+        "not known by SonarQube for IDE"));
+    }
   }
 
   private boolean doesClientFileExists(String configScopeId, String filePath, Collection<String> boundScopes) {

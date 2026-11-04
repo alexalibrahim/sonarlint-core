@@ -321,25 +321,11 @@ public class AnalysisService {
         var ruleSet = e.getValue();
 
         LOG.debug("  * {}: {} active rules", languageKey, ruleSet.getRules().size());
-        var missingRuleOrTemplateDefinitions = new LinkedHashSet<>();
+        var missingRuleOrTemplateDefinitions = new LinkedHashSet<String>();
         for (ServerActiveRule possiblyDeprecatedActiveRuleFromStorage : ruleSet.getRules()) {
           var activeRuleFromStorage = tryConvertDeprecatedKeys(binding.connectionId(), possiblyDeprecatedActiveRuleFromStorage);
-          SonarLintRuleDefinition ruleOrTemplateDefinition;
-          if (StringUtils.isNotBlank(activeRuleFromStorage.getTemplateKey())) {
-            ruleOrTemplateDefinition = rulesRepository.getRule(binding.connectionId(), activeRuleFromStorage.getTemplateKey()).orElse(null);
-            if (ruleOrTemplateDefinition == null) {
-              LOG.debug("Rule {} is enabled on the server, but its template {} is not available in SonarLint", activeRuleFromStorage.getRuleKey(),
-                activeRuleFromStorage.getTemplateKey());
-              continue;
-            }
-          } else {
-            ruleOrTemplateDefinition = rulesRepository.getRule(binding.connectionId(), activeRuleFromStorage.getRuleKey()).orElse(null);
-            if (ruleOrTemplateDefinition == null) {
-              missingRuleOrTemplateDefinitions.add(activeRuleFromStorage.getRuleKey());
-              continue;
-            }
-          }
-          if (shouldIncludeRuleForAnalysis(binding.connectionId(), ruleOrTemplateDefinition, hotspotsOnly)) {
+          var ruleOrTemplateDefinition = resolveRuleOrTemplateDefinition(binding.connectionId(), activeRuleFromStorage, missingRuleOrTemplateDefinitions);
+          if (ruleOrTemplateDefinition != null && shouldIncludeRuleForAnalysis(binding.connectionId(), ruleOrTemplateDefinition, hotspotsOnly)) {
             result.add(buildActiveRuleDto(ruleOrTemplateDefinition, activeRuleFromStorage));
           }
         }
@@ -355,6 +341,23 @@ public class AnalysisService {
       result.addAll(iPythonRules);
     }
     return result;
+  }
+
+  @CheckForNull
+  private SonarLintRuleDefinition resolveRuleOrTemplateDefinition(String connectionId, ServerActiveRule activeRuleFromStorage, Set<String> missingRuleOrTemplateDefinitions) {
+    if (StringUtils.isNotBlank(activeRuleFromStorage.getTemplateKey())) {
+      var templateDefinition = rulesRepository.getRule(connectionId, activeRuleFromStorage.getTemplateKey()).orElse(null);
+      if (templateDefinition == null) {
+        LOG.debug("Rule {} is enabled on the server, but its template {} is not available in SonarLint", activeRuleFromStorage.getRuleKey(),
+          activeRuleFromStorage.getTemplateKey());
+      }
+      return templateDefinition;
+    }
+    var ruleDefinition = rulesRepository.getRule(connectionId, activeRuleFromStorage.getRuleKey()).orElse(null);
+    if (ruleDefinition == null) {
+      missingRuleOrTemplateDefinitions.add(activeRuleFromStorage.getRuleKey());
+    }
+    return ruleDefinition;
   }
 
   public ActiveRuleDto buildActiveRuleDto(SonarLintRuleDefinition ruleOrTemplateDefinition, ServerActiveRule activeRule) {
