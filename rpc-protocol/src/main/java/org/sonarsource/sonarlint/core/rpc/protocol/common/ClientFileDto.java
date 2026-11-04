@@ -40,6 +40,7 @@ public class ClientFileDto {
   private final Language detectedLanguage;
   private final boolean isUserDefined;
 
+  @SuppressWarnings("java:S107")
   public ClientFileDto(URI uri, Path relativePath, String configScopeId, @Nullable Boolean isTest, @Nullable String charset, @Nullable Path fsPath, @Nullable String content,
     @Nullable Language detectedLanguage, boolean isUserDefined) {
     this.uri = uri;

@@ -39,7 +39,8 @@ public class RaisedIssueDto extends RaisedFindingDto {
   public RaisedIssueDto(UUID id, @Nullable String serverKey, String ruleKey, String primaryMessage, Either<StandardModeDetails, MQRModeDetails> severityMode,
     Instant introductionDate, boolean isOnNewCode, boolean resolved, @Nullable TextRangeDto textRange, List<IssueFlowDto> flows, List<QuickFixDto> quickFixes,
     @Nullable String ruleDescriptionContextKey, boolean isAiCodeFixable) {
-    super(id, serverKey, ruleKey, primaryMessage, severityMode, introductionDate, isOnNewCode, resolved, textRange, flows, quickFixes, ruleDescriptionContextKey);
+    super(id, serverKey, ruleKey, primaryMessage, severityMode, new FindingStatus(introductionDate, isOnNewCode, resolved),
+      new FindingLocation(textRange, flows, quickFixes, ruleDescriptionContextKey));
     this.isAiCodeFixable = isAiCodeFixable;
   }
 

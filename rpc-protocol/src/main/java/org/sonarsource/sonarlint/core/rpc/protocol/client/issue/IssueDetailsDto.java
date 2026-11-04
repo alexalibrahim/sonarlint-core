@@ -22,6 +22,7 @@ package org.sonarsource.sonarlint.core.rpc.protocol.client.issue;
 import java.nio.file.Path;
 import java.util.List;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.FlowDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.LocationDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto;
 
 public class IssueDetailsDto {
@@ -35,16 +36,14 @@ public class IssueDetailsDto {
   private final List<FlowDto> flows;
   private final TextRangeDto textRange;
 
-  public IssueDetailsDto(TextRangeDto textRange, String ruleKey, String issueKey,
-    Path ideFilePath, String message, String creationDate,
-    String codeSnippet, boolean isTaint, List<FlowDto> flows) {
+  public IssueDetailsDto(LocationDto mainLocation, String ruleKey, String issueKey, String creationDate, boolean isTaint, List<FlowDto> flows) {
     this.issueKey = issueKey;
     this.ruleKey = ruleKey;
-    this.textRange = textRange;
-    this.ideFilePath = ideFilePath;
-    this.message = message;
+    this.textRange = mainLocation.getTextRange();
+    this.ideFilePath = mainLocation.getIdeFilePath();
+    this.message = mainLocation.getMessage();
     this.creationDate = creationDate;
-    this.codeSnippet = codeSnippet;
+    this.codeSnippet = mainLocation.getCodeSnippet();
     this.isTaint = isTaint;
     this.flows = flows;
   }

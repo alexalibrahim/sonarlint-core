@@ -178,8 +178,10 @@ public class ShowIssueRequestHandler implements HttpRequestHandler {
 
     var isTaint = isIssueTaint(issueDetails.ruleKey);
 
-    return new ShowIssueParams(configScopeId, new IssueDetailsDto(textRangeDto, issueDetails.ruleKey, issueDetails.key, translation.serverToIdePath(issueDetails.path),
-      issueDetails.message, issueDetails.creationDate, issueDetails.codeSnippet, isTaint, flowLocations));
+    var mainLocation = new LocationDto(textRangeDto, issueDetails.message, translation.serverToIdePath(issueDetails.path), issueDetails.codeSnippet);
+
+    return new ShowIssueParams(configScopeId, new IssueDetailsDto(mainLocation, issueDetails.ruleKey, issueDetails.key, issueDetails.creationDate, isTaint,
+      flowLocations));
   }
 
   static boolean isIssueTaint(String ruleKey) {

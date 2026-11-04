@@ -54,6 +54,7 @@ public class RawIssueDto {
   @Nullable
   private final VulnerabilityProbability vulnerabilityProbability;
 
+  @SuppressWarnings("java:S107")
   public RawIssueDto(IssueSeverity severity, RuleType type, CleanCodeAttribute cleanCodeAttribute, Map<SoftwareQuality, ImpactSeverity> impacts, String ruleKey,
     String primaryMessage, @Nullable URI fileUri, List<RawIssueFlowDto> flows, List<QuickFixDto> quickFixes, @Nullable TextRangeDto textRange,
     @Nullable String ruleDescriptionContextKey, @Nullable VulnerabilityProbability vulnerabilityProbability) {
