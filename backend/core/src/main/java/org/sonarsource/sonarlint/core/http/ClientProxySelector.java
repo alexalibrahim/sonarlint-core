@@ -66,6 +66,6 @@ public class ClientProxySelector extends ProxySelector {
 
   @Override
   public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-
+    // Nothing to do: connection failures are not tracked by this proxy selector
   }
 }
