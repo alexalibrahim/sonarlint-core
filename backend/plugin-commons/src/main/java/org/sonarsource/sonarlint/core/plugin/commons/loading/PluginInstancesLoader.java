@@ -27,6 +27,8 @@ import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -140,7 +142,11 @@ public class PluginInstancesLoader implements Closeable {
   private static Path createTmpFolderForPluginDeps(PluginInfo info) {
     try {
       var prefix = "sonarlint_" + info.getKey();
-      return Files.createTempDirectory(prefix);
+      // On Windows, the default temp directory is located in the user profile and is not publicly writable
+      FileAttribute<?>[] attrs = SystemUtils.IS_OS_UNIX
+        ? new FileAttribute<?>[] {PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"))}
+        : new FileAttribute<?>[0];
+      return Files.createTempDirectory(prefix, attrs);
     } catch (IOException e) {
       throw new IllegalStateException("Unable to create temporary directory", e);
     }

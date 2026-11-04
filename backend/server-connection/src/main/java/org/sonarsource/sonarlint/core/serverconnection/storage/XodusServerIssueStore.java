@@ -787,12 +787,13 @@ public class XodusServerIssueStore implements ProjectServerIssueStore {
   }
 
   @Override
-  public ServerIssue<?> getIssue(String issueKey) {
+  @SuppressWarnings("unchecked")
+  public <G extends ServerIssue<G>> G getIssue(String issueKey) {
     return entityStore.computeInTransaction(txn -> {
       var optionalEntity = findUnique(txn, ISSUE_ENTITY_TYPE, KEY_PROPERTY_NAME, issueKey);
       if (optionalEntity.isPresent()) {
         var issueEntity = optionalEntity.get();
-        return adapt(issueEntity);
+        return (G) adapt(issueEntity);
       }
       return null;
     });
