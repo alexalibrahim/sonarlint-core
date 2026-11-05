@@ -36,6 +36,8 @@ public class RaisedIssueDto extends RaisedFindingDto {
 
   private final boolean isAiCodeFixable;
 
+  // RPC DTO: the full parameter list mirrors the protocol payload and is kept for API compatibility
+  @SuppressWarnings("java:S107")
   public RaisedIssueDto(UUID id, @Nullable String serverKey, String ruleKey, String primaryMessage, Either<StandardModeDetails, MQRModeDetails> severityMode,
     Instant introductionDate, boolean isOnNewCode, boolean resolved, @Nullable TextRangeDto textRange, List<IssueFlowDto> flows, List<QuickFixDto> quickFixes,
     @Nullable String ruleDescriptionContextKey, boolean isAiCodeFixable) {
@@ -66,27 +68,24 @@ public class RaisedIssueDto extends RaisedFindingDto {
     private final String ruleDescriptionContextKey;
     private final boolean isAiCodeFixable;
 
-    private Builder(UUID id, @Nullable String serverKey, String ruleKey, String primaryMessage, Either<StandardModeDetails, MQRModeDetails> severityMode,
-      Instant introductionDate, boolean isOnNewCode, boolean resolved, @Nullable TextRangeDto textRange, List<IssueFlowDto> flows, List<QuickFixDto> quickFixes,
-      @Nullable String ruleDescriptionContextKey, boolean isAiCodeFixable) {
-      this.id = id;
-      this.serverKey = serverKey;
-      this.ruleKey = ruleKey;
-      this.primaryMessage = primaryMessage;
-      this.severityMode = severityMode;
-      this.introductionDate = introductionDate;
-      this.isOnNewCode = isOnNewCode;
-      this.resolved = resolved;
-      this.textRange = textRange;
-      this.flows = flows;
-      this.quickFixes = quickFixes;
-      this.ruleDescriptionContextKey = ruleDescriptionContextKey;
-      this.isAiCodeFixable = isAiCodeFixable;
+    private Builder(RaisedIssueDto dto) {
+      this.id = dto.getId();
+      this.serverKey = dto.getServerKey();
+      this.ruleKey = dto.getRuleKey();
+      this.primaryMessage = dto.getPrimaryMessage();
+      this.severityMode = dto.getSeverityMode();
+      this.introductionDate = dto.getIntroductionDate();
+      this.isOnNewCode = dto.isOnNewCode();
+      this.resolved = dto.isResolved();
+      this.textRange = dto.getTextRange();
+      this.flows = dto.getFlows();
+      this.quickFixes = dto.getQuickFixes();
+      this.ruleDescriptionContextKey = dto.getRuleDescriptionContextKey();
+      this.isAiCodeFixable = dto.isAiCodeFixable();
     }
 
     public static Builder from(RaisedIssueDto dto) {
-      return new Builder(dto.getId(), dto.getServerKey(), dto.getRuleKey(), dto.getPrimaryMessage(), dto.getSeverityMode(), dto.getIntroductionDate(), dto.isOnNewCode(),
-        dto.isResolved(), dto.getTextRange(), dto.getFlows(), dto.getQuickFixes(), dto.getRuleDescriptionContextKey(), dto.isAiCodeFixable());
+      return new Builder(dto);
     }
 
     public Builder withResolution(boolean resolved) {

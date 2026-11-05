@@ -71,6 +71,7 @@ public class InitializeParams {
    * @param sonarlintUserHome           Path to SonarLint user home directory. If null, will default to the SONARLINT_USER_HOME env variable if set, else ~/.sonarlint
    * @param standaloneRuleConfigByKey   Local rule configuration for standalone analysis. This configuration will override defaults rule activation and parameters.
    */
+  @SuppressWarnings("java:S107")
   public InitializeParams(
     ClientConstantInfoDto clientConstantInfo,
     TelemetryClientConstantAttributesDto telemetryConstantAttributes,
@@ -123,6 +124,7 @@ public class InitializeParams {
    * @param standaloneRuleConfigByKey   Local rule configuration for standalone analysis. This configuration will override defaults rule activation and parameters.
    */
   @Deprecated(since = "10.19", forRemoval = true)
+  @SuppressWarnings("java:S107")
   public InitializeParams(
     ClientConstantInfoDto clientConstantInfo,
     TelemetryClientConstantAttributesDto telemetryConstantAttributes,
