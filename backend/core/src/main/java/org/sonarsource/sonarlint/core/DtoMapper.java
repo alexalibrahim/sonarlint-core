@@ -64,15 +64,24 @@ public class DtoMapper {
   public static RaisedHotspotDto toRaisedHotspotDto(TrackedIssue issue, NewCodeDefinition newCodeDefinition, boolean isMQRMode) {
     var status = issue.getHotspotStatus();
     status = status != null ? status : HotspotStatus.TO_REVIEW;
-    return new RaisedHotspotDto(issue.getId(), issue.getServerKey(), issue.getRuleKey(), issue.getMessage(),
-      isMQRMode && !issue.getImpacts().isEmpty() ?
+    return RaisedHotspotDto.builder()
+      .withId(issue.getId())
+      .withServerKey(issue.getServerKey())
+      .withRuleKey(issue.getRuleKey())
+      .withPrimaryMessage(issue.getMessage())
+      .withSeverityMode(isMQRMode && !issue.getImpacts().isEmpty() ?
         Either.forRight(new MQRModeDetails(RuleDetailsAdapter.adapt(issue.getCleanCodeAttribute()), RuleDetailsAdapter.toDto(issue.getImpacts())))
-        : Either.forLeft(new StandardModeDetails(RuleDetailsAdapter.adapt(issue.getSeverity()), RuleDetailsAdapter.adapt(issue.getType()))),
-      requireNonNull(issue.getIntroductionDate()), newCodeDefinition.isOnNewCode(issue.getIntroductionDate()), issue.isResolved(),
-      toTextRangeDto(issue.getTextRangeWithHash()),
-      issue.getFlows().stream().map(RuleDetailsAdapter::adapt).toList(),
-      issue.getQuickFixes().stream().map(RuleDetailsAdapter::adapt).toList(),
-      issue.getRuleDescriptionContextKey(), RuleDetailsAdapter.adapt(issue.getVulnerabilityProbability()), status);
+        : Either.forLeft(new StandardModeDetails(RuleDetailsAdapter.adapt(issue.getSeverity()), RuleDetailsAdapter.adapt(issue.getType()))))
+      .withIntroductionDate(requireNonNull(issue.getIntroductionDate()))
+      .withOnNewCode(newCodeDefinition.isOnNewCode(issue.getIntroductionDate()))
+      .withResolved(issue.isResolved())
+      .withTextRange(toTextRangeDto(issue.getTextRangeWithHash()))
+      .withFlows(issue.getFlows().stream().map(RuleDetailsAdapter::adapt).toList())
+      .withQuickFixes(issue.getQuickFixes().stream().map(RuleDetailsAdapter::adapt).toList())
+      .withRuleDescriptionContextKey(issue.getRuleDescriptionContextKey())
+      .withVulnerabilityProbability(RuleDetailsAdapter.adapt(issue.getVulnerabilityProbability()))
+      .withStatus(status)
+      .build();
   }
 
 }
