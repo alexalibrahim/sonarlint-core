@@ -95,6 +95,7 @@ import org.sonarsource.sonarlint.core.sync.AnalyzerConfigurationSynchronized;
 import org.sonarsource.sonarlint.core.sync.ConfigurationScopesSynchronizedEvent;
 import org.sonarsource.sonarlint.core.sync.PluginsSynchronizedEvent;
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 
@@ -139,6 +140,7 @@ public class AnalysisService {
   private final Path esLintBridgeServerPath;
   private boolean automaticAnalysisEnabled;
 
+  @Autowired
   public AnalysisService(SonarLintRpcClient client, ConfigurationRepository configurationRepository, LanguageSupportRepository languageSupportRepository,
     StorageService storageService, PluginsService pluginsService, RulesService rulesService, RulesRepository rulesRepository, ClientFileSystemService fileSystemService,
     FileExclusionService fileExclusionService, MonitoringService monitoringService, TaskManager taskManager,

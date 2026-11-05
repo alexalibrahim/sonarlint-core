@@ -77,6 +77,7 @@ import org.sonarsource.sonarlint.core.serverconnection.storage.ProjectServerIssu
 import org.sonarsource.sonarlint.core.storage.StorageService;
 import org.sonarsource.sonarlint.core.tracking.LocalOnlyIssueRepository;
 import org.sonarsource.sonarlint.core.tracking.TaintVulnerabilityTrackingService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 
@@ -109,6 +110,7 @@ public class IssueService {
   private final RulesService rulesService;
   private final TaintVulnerabilityTrackingService taintVulnerabilityTrackingService;
 
+  @Autowired
   public IssueService(ConfigurationRepository configurationRepository, SonarQubeClientManager sonarQubeClientManager, StorageService storageService,
     LocalOnlyIssueStorageService localOnlyIssueStorageService, LocalOnlyIssueRepository localOnlyIssueRepository,
     ApplicationEventPublisher eventPublisher, FindingReportingService findingReportingService, SeverityModeService severityModeService,

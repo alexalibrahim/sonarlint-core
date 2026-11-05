@@ -33,11 +33,26 @@ public class IssueMapper {
   }
 
   public static TrackedIssue toTrackedIssue(RawIssue issue, Instant introductionDate) {
-    return new TrackedIssue(UUID.randomUUID(), issue.getMessage(), introductionDate, false, issue.getSeverity(),
-      issue.getRuleType(), issue.getRuleKey(), getTextRangeWithHash(issue.getTextRange(),
-      issue.getClientInputFile()), getLineWithHash(issue.getTextRange(),
-      issue.getClientInputFile()), null, issue.getImpacts(), issue.getFlows(), issue.getQuickFixes(),
-      issue.getVulnerabilityProbability(), null,  issue.getRuleDescriptionContextKey(), issue.getCleanCodeAttribute(), issue.getFileUri());
+    return TrackedIssue.builder()
+      .id(UUID.randomUUID())
+      .message(issue.getMessage())
+      .introductionDate(introductionDate)
+      .resolved(false)
+      .severity(issue.getSeverity())
+      .type(issue.getRuleType())
+      .ruleKey(issue.getRuleKey())
+      .textRangeWithHash(getTextRangeWithHash(issue.getTextRange(), issue.getClientInputFile()))
+      .lineWithHash(getLineWithHash(issue.getTextRange(), issue.getClientInputFile()))
+      .serverKey(null)
+      .impacts(issue.getImpacts())
+      .flows(issue.getFlows())
+      .quickFixes(issue.getQuickFixes())
+      .vulnerabilityProbability(issue.getVulnerabilityProbability())
+      .hotspotStatus(null)
+      .ruleDescriptionContextKey(issue.getRuleDescriptionContextKey())
+      .cleanCodeAttribute(issue.getCleanCodeAttribute())
+      .fileUri(issue.getFileUri())
+      .build();
   }
 
 }
