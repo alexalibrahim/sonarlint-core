@@ -104,12 +104,26 @@ public class MatchingSession {
   }
 
   public static TrackedIssue updateKnownFindingWithRawIssueData(KnownFinding knownIssue, RawIssue rawIssue) {
-    return new TrackedIssue(knownIssue.getId(), rawIssue.getMessage(), knownIssue.getIntroductionDate(),
-      false, rawIssue.getSeverity(), rawIssue.getRuleType(), rawIssue.getRuleKey(),
-      TextRangeUtils.getTextRangeWithHash(rawIssue.getTextRange(), rawIssue.getClientInputFile()),
-      TextRangeUtils.getLineWithHash(rawIssue.getTextRange(), rawIssue.getClientInputFile()), knownIssue.getServerKey(), rawIssue.getImpacts(), rawIssue.getFlows(),
-      rawIssue.getQuickFixes(), rawIssue.getVulnerabilityProbability(), null, rawIssue.getRuleDescriptionContextKey(),
-      rawIssue.getCleanCodeAttribute(), rawIssue.getFileUri());
+    return TrackedIssue.builder()
+      .id(knownIssue.getId())
+      .message(rawIssue.getMessage())
+      .introductionDate(knownIssue.getIntroductionDate())
+      .resolved(false)
+      .severity(rawIssue.getSeverity())
+      .type(rawIssue.getRuleType())
+      .ruleKey(rawIssue.getRuleKey())
+      .textRangeWithHash(TextRangeUtils.getTextRangeWithHash(rawIssue.getTextRange(), rawIssue.getClientInputFile()))
+      .lineWithHash(TextRangeUtils.getLineWithHash(rawIssue.getTextRange(), rawIssue.getClientInputFile()))
+      .serverKey(knownIssue.getServerKey())
+      .impacts(rawIssue.getImpacts())
+      .flows(rawIssue.getFlows())
+      .quickFixes(rawIssue.getQuickFixes())
+      .vulnerabilityProbability(rawIssue.getVulnerabilityProbability())
+      .hotspotStatus(null)
+      .ruleDescriptionContextKey(rawIssue.getRuleDescriptionContextKey())
+      .cleanCodeAttribute(rawIssue.getCleanCodeAttribute())
+      .fileUri(rawIssue.getFileUri())
+      .build();
   }
 
   private TrackedIssue newlyKnownIssue(Path relativePath, RawIssue rawFinding) {

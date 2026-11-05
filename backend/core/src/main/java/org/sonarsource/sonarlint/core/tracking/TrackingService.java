@@ -242,28 +242,32 @@ public class TrackingService {
     var serverSeverity = serverIssue.getUserSeverity();
     var severity = serverSeverity != null ? serverSeverity : trackedIssue.getSeverity();
     var impacts = serverIssue.getImpacts().isEmpty() ? trackedIssue.getImpacts() : serverIssue.getImpacts();
-    return new TrackedIssue(trackedIssue.getId(), trackedIssue.getMessage(), serverIssue.getCreationDate(),
-      serverIssue.isResolved(), severity, serverIssue.getType(), serverIssue.getRuleKey(), trackedIssue.getTextRangeWithHash(),
-      trackedIssue.getLineWithHash(), serverIssue.getKey(), impacts, trackedIssue.getFlows(),
-      trackedIssue.getQuickFixes(), trackedIssue.getVulnerabilityProbability(), trackedIssue.getHotspotStatus(), trackedIssue.getRuleDescriptionContextKey(),
-      trackedIssue.getCleanCodeAttribute(), trackedIssue.getFileUri());
+    return TrackedIssue.builder(trackedIssue)
+      .introductionDate(serverIssue.getCreationDate())
+      .resolved(serverIssue.isResolved())
+      .severity(severity)
+      .type(serverIssue.getType())
+      .ruleKey(serverIssue.getRuleKey())
+      .serverKey(serverIssue.getKey())
+      .impacts(impacts)
+      .build();
   }
 
   private static TrackedIssue updateRawHotspotWithServerData(TrackedIssue trackedHotspot, ServerHotspot serverHotspot) {
-    return new TrackedIssue(trackedHotspot.getId(), trackedHotspot.getMessage(), serverHotspot.getCreationDate(),
-      serverHotspot.getStatus().isResolved(), trackedHotspot.getSeverity(), RuleType.SECURITY_HOTSPOT, trackedHotspot.getRuleKey(),
-      trackedHotspot.getTextRangeWithHash(), trackedHotspot.getLineWithHash(),
-      serverHotspot.getKey(), trackedHotspot.getImpacts(), trackedHotspot.getFlows(), trackedHotspot.getQuickFixes(),
-      serverHotspot.getVulnerabilityProbability(), HotspotStatus.valueOf(serverHotspot.getStatus().name()), trackedHotspot.getRuleDescriptionContextKey(),
-      trackedHotspot.getCleanCodeAttribute(), trackedHotspot.getFileUri());
+    return TrackedIssue.builder(trackedHotspot)
+      .introductionDate(serverHotspot.getCreationDate())
+      .resolved(serverHotspot.getStatus().isResolved())
+      .type(RuleType.SECURITY_HOTSPOT)
+      .serverKey(serverHotspot.getKey())
+      .vulnerabilityProbability(serverHotspot.getVulnerabilityProbability())
+      .hotspotStatus(HotspotStatus.valueOf(serverHotspot.getStatus().name()))
+      .build();
   }
 
   private static TrackedIssue updateTrackedIssueWithLocalOnlyIssueData(TrackedIssue trackedIssue, LocalOnlyIssue localOnlyIssue) {
-    return new TrackedIssue(trackedIssue.getId(), trackedIssue.getMessage(), trackedIssue.getIntroductionDate(),
-      localOnlyIssue.getResolution() != null, trackedIssue.getSeverity(), trackedIssue.getType(), trackedIssue.getRuleKey(), trackedIssue.getTextRangeWithHash(),
-      trackedIssue.getLineWithHash(), trackedIssue.getServerKey(), trackedIssue.getImpacts(), trackedIssue.getFlows(),
-      trackedIssue.getQuickFixes(), trackedIssue.getVulnerabilityProbability(), trackedIssue.getHotspotStatus(), trackedIssue.getRuleDescriptionContextKey(),
-      trackedIssue.getCleanCodeAttribute(), trackedIssue.getFileUri());
+    return TrackedIssue.builder(trackedIssue)
+      .resolved(localOnlyIssue.getResolution() != null)
+      .build();
   }
 
   private MatchingSession startMatchingSession(String configurationScopeId, Set<Path> fileRelativePaths, Set<URI> fileUris, UnaryOperator<String> fileContentProvider) {

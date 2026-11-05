@@ -22,6 +22,7 @@ package org.sonarsource.sonarlint.core.sync;
 import com.google.common.util.concurrent.MoreExecutors;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -104,6 +105,7 @@ public class SynchronizationService {
     FailSafeExecutors.newSingleThreadScheduledExecutor("SonarLint Local Storage Synchronizer"));
   private final Set<String> ignoreBranchEventForScopes = ConcurrentHashMap.newKeySet();
 
+  @Inject
   public SynchronizationService(SonarLintRpcClient client, ConfigurationRepository configurationRepository, LanguageSupportRepository languageSupportRepository,
     SonarQubeClientManager sonarQubeClientManager, TaskManager taskManager, StorageService storageService, InitializeParams params,
     TaintSynchronizationService taintSynchronizationService, IssueSynchronizationService issueSynchronizationService, HotspotSynchronizationService hotspotSynchronizationService,

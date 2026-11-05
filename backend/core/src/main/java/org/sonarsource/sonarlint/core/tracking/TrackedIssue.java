@@ -58,28 +58,169 @@ public class TrackedIssue {
   private final CleanCodeAttribute cleanCodeAttribute;
   private final URI fileUri;
 
-  public TrackedIssue(UUID id, String message, @Nullable Instant introductionDate, boolean resolved, IssueSeverity overriddenSeverity, RuleType type, String ruleKey,
-    @Nullable TextRangeWithHash textRangeWithHash, @Nullable LineWithHash lineWithHash, @Nullable String serverKey, Map<SoftwareQuality, ImpactSeverity> impacts, List<Flow> flows,
-    List<QuickFix> quickFixes, VulnerabilityProbability vulnerabilityProbability, @Nullable HotspotStatus hotspotStatus, @Nullable String ruleDescriptionContextKey,
-    CleanCodeAttribute cleanCodeAttribute, @Nullable URI fileUri) {
-    this.id = id;
-    this.message = message;
-    this.ruleKey = ruleKey;
-    this.textRangeWithHash = textRangeWithHash;
-    this.lineWithHash = lineWithHash;
-    this.serverKey = serverKey;
-    this.introductionDate = introductionDate;
-    this.resolved = resolved;
-    this.severity = overriddenSeverity;
-    this.type = type;
-    this.impacts = impacts;
-    this.flows = flows;
-    this.quickFixes = quickFixes;
-    this.vulnerabilityProbability = vulnerabilityProbability;
-    this.hotspotStatus = hotspotStatus;
-    this.ruleDescriptionContextKey = ruleDescriptionContextKey;
-    this.cleanCodeAttribute = cleanCodeAttribute;
-    this.fileUri = fileUri;
+  private TrackedIssue(Builder builder) {
+    this.id = builder.id;
+    this.message = builder.message;
+    this.ruleKey = builder.ruleKey;
+    this.textRangeWithHash = builder.textRangeWithHash;
+    this.lineWithHash = builder.lineWithHash;
+    this.serverKey = builder.serverKey;
+    this.introductionDate = builder.introductionDate;
+    this.resolved = builder.resolved;
+    this.severity = builder.severity;
+    this.type = builder.type;
+    this.impacts = builder.impacts;
+    this.flows = builder.flows;
+    this.quickFixes = builder.quickFixes;
+    this.vulnerabilityProbability = builder.vulnerabilityProbability;
+    this.hotspotStatus = builder.hotspotStatus;
+    this.ruleDescriptionContextKey = builder.ruleDescriptionContextKey;
+    this.cleanCodeAttribute = builder.cleanCodeAttribute;
+    this.fileUri = builder.fileUri;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static Builder builder(TrackedIssue trackedIssue) {
+    return new Builder()
+      .id(trackedIssue.id)
+      .message(trackedIssue.message)
+      .introductionDate(trackedIssue.introductionDate)
+      .resolved(trackedIssue.resolved)
+      .severity(trackedIssue.severity)
+      .type(trackedIssue.type)
+      .ruleKey(trackedIssue.ruleKey)
+      .textRangeWithHash(trackedIssue.textRangeWithHash)
+      .lineWithHash(trackedIssue.lineWithHash)
+      .serverKey(trackedIssue.serverKey)
+      .impacts(trackedIssue.impacts)
+      .flows(trackedIssue.flows)
+      .quickFixes(trackedIssue.quickFixes)
+      .vulnerabilityProbability(trackedIssue.vulnerabilityProbability)
+      .hotspotStatus(trackedIssue.hotspotStatus)
+      .ruleDescriptionContextKey(trackedIssue.ruleDescriptionContextKey)
+      .cleanCodeAttribute(trackedIssue.cleanCodeAttribute)
+      .fileUri(trackedIssue.fileUri);
+  }
+
+  public static class Builder {
+    private UUID id;
+    private String message;
+    private String ruleKey;
+    private TextRangeWithHash textRangeWithHash;
+    private LineWithHash lineWithHash;
+    private String serverKey;
+    private Instant introductionDate;
+    private boolean resolved;
+    private IssueSeverity severity;
+    private RuleType type;
+    private Map<SoftwareQuality, ImpactSeverity> impacts;
+    private List<Flow> flows;
+    private List<QuickFix> quickFixes;
+    private VulnerabilityProbability vulnerabilityProbability;
+    private HotspotStatus hotspotStatus;
+    private String ruleDescriptionContextKey;
+    private CleanCodeAttribute cleanCodeAttribute;
+    private URI fileUri;
+
+    private Builder() {
+    }
+
+    public Builder id(UUID id) {
+      this.id = id;
+      return this;
+    }
+
+    public Builder message(String message) {
+      this.message = message;
+      return this;
+    }
+
+    public Builder introductionDate(@Nullable Instant introductionDate) {
+      this.introductionDate = introductionDate;
+      return this;
+    }
+
+    public Builder resolved(boolean resolved) {
+      this.resolved = resolved;
+      return this;
+    }
+
+    public Builder severity(IssueSeverity severity) {
+      this.severity = severity;
+      return this;
+    }
+
+    public Builder type(RuleType type) {
+      this.type = type;
+      return this;
+    }
+
+    public Builder ruleKey(String ruleKey) {
+      this.ruleKey = ruleKey;
+      return this;
+    }
+
+    public Builder textRangeWithHash(@Nullable TextRangeWithHash textRangeWithHash) {
+      this.textRangeWithHash = textRangeWithHash;
+      return this;
+    }
+
+    public Builder lineWithHash(@Nullable LineWithHash lineWithHash) {
+      this.lineWithHash = lineWithHash;
+      return this;
+    }
+
+    public Builder serverKey(@Nullable String serverKey) {
+      this.serverKey = serverKey;
+      return this;
+    }
+
+    public Builder impacts(Map<SoftwareQuality, ImpactSeverity> impacts) {
+      this.impacts = impacts;
+      return this;
+    }
+
+    public Builder flows(List<Flow> flows) {
+      this.flows = flows;
+      return this;
+    }
+
+    public Builder quickFixes(List<QuickFix> quickFixes) {
+      this.quickFixes = quickFixes;
+      return this;
+    }
+
+    public Builder vulnerabilityProbability(@Nullable VulnerabilityProbability vulnerabilityProbability) {
+      this.vulnerabilityProbability = vulnerabilityProbability;
+      return this;
+    }
+
+    public Builder hotspotStatus(@Nullable HotspotStatus hotspotStatus) {
+      this.hotspotStatus = hotspotStatus;
+      return this;
+    }
+
+    public Builder ruleDescriptionContextKey(@Nullable String ruleDescriptionContextKey) {
+      this.ruleDescriptionContextKey = ruleDescriptionContextKey;
+      return this;
+    }
+
+    public Builder cleanCodeAttribute(CleanCodeAttribute cleanCodeAttribute) {
+      this.cleanCodeAttribute = cleanCodeAttribute;
+      return this;
+    }
+
+    public Builder fileUri(@Nullable URI fileUri) {
+      this.fileUri = fileUri;
+      return this;
+    }
+
+    public TrackedIssue build() {
+      return new TrackedIssue(this);
+    }
   }
 
   public UUID getId() {

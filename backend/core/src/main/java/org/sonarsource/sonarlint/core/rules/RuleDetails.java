@@ -64,23 +64,28 @@ public class RuleDetails {
   private final Set<String> educationPrincipleKeys;
   private final VulnerabilityProbability vulnerabilityProbability;
 
-  public RuleDetails(String key, SonarLanguage language, String name, String htmlDescription, Map<String, List<DescriptionSection>> descriptionSectionsByKey,
-    Map<SoftwareQuality, ImpactSeverity> impacts, @Nullable IssueSeverity defaultSeverity, @Nullable RuleType type, @Nullable CleanCodeAttribute cleanCodeAttribute,
-    @Nullable String extendedDescription, Collection<EffectiveRuleParam> params, Set<String> educationPrincipleKeys,
-    @Nullable VulnerabilityProbability vulnerabilityProbability) {
+  private record Descriptions(String htmlDescription, Map<String, List<DescriptionSection>> descriptionSectionsByKey, @Nullable String extendedDescription) {
+  }
+
+  private record Classification(Map<SoftwareQuality, ImpactSeverity> impacts, @Nullable IssueSeverity defaultSeverity, @Nullable RuleType type,
+    @Nullable CleanCodeAttribute cleanCodeAttribute, @Nullable VulnerabilityProbability vulnerabilityProbability) {
+  }
+
+  private RuleDetails(String key, SonarLanguage language, String name, Descriptions descriptions, Classification classification,
+    Collection<EffectiveRuleParam> params, Set<String> educationPrincipleKeys) {
     this.key = key;
     this.language = language;
     this.name = name;
-    this.htmlDescription = htmlDescription;
-    this.descriptionSectionsByKey = descriptionSectionsByKey;
-    this.defaultSeverity = defaultSeverity;
-    this.type = type;
-    this.cleanCodeAttribute = cleanCodeAttribute;
-    this.impacts = impacts;
+    this.htmlDescription = descriptions.htmlDescription();
+    this.descriptionSectionsByKey = descriptions.descriptionSectionsByKey();
+    this.defaultSeverity = classification.defaultSeverity();
+    this.type = classification.type();
+    this.cleanCodeAttribute = classification.cleanCodeAttribute();
+    this.impacts = classification.impacts();
     this.params = params;
-    this.extendedDescription = extendedDescription;
+    this.extendedDescription = descriptions.extendedDescription();
     this.educationPrincipleKeys = educationPrincipleKeys;
-    this.vulnerabilityProbability = vulnerabilityProbability;
+    this.vulnerabilityProbability = classification.vulnerabilityProbability();
   }
 
   public static RuleDetails from(SonarLintRuleDefinition ruleDefinition, @Nullable StandaloneRuleConfigDto ruleConfig) {
@@ -88,17 +93,18 @@ public class RuleDetails {
       ruleDefinition.getKey(),
       ruleDefinition.getLanguage(),
       ruleDefinition.getName(),
-      ruleDefinition.getHtmlDescription(),
-      ruleDefinition.getDescriptionSections().stream()
-        .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
-        .collect(Collectors.groupingBy(DescriptionSection::getKey)),
-      ruleDefinition.getDefaultImpacts(),
-      ruleDefinition.getDefaultSeverity(),
-      ruleDefinition.getType(),
-      ruleDefinition.getCleanCodeAttribute().orElse(CleanCodeAttribute.defaultCleanCodeAttribute()),
-      null,
+      new Descriptions(ruleDefinition.getHtmlDescription(),
+        ruleDefinition.getDescriptionSections().stream()
+          .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
+          .collect(Collectors.groupingBy(DescriptionSection::getKey)),
+        null),
+      new Classification(ruleDefinition.getDefaultImpacts(),
+        ruleDefinition.getDefaultSeverity(),
+        ruleDefinition.getType(),
+        ruleDefinition.getCleanCodeAttribute().orElse(CleanCodeAttribute.defaultCleanCodeAttribute()),
+        ruleDefinition.getVulnerabilityProbability().orElse(null)),
       transformParams(ruleDefinition.getParams(), ruleConfig != null ? ruleConfig.getParamValueByKey() : Map.of()),
-      ruleDefinition.getEducationPrincipleKeys(), ruleDefinition.getVulnerabilityProbability().orElse(null));
+      ruleDefinition.getEducationPrincipleKeys());
   }
 
   @NotNull
@@ -110,30 +116,36 @@ public class RuleDetails {
   }
 
   public static RuleDetails merging(ServerActiveRule activeRuleFromStorage, ServerRule serverRule) {
-    return new RuleDetails(activeRuleFromStorage.getRuleKey(), serverRule.getLanguage(), serverRule.getName(), serverRule.getHtmlDesc(),
-      serverRule.getDescriptionSections().stream()
-        .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
-        .collect(Collectors.groupingBy(DescriptionSection::getKey)),
-      serverRule.getImpacts(),
-      Optional.ofNullable(activeRuleFromStorage.getSeverity()).orElse(serverRule.getSeverity()),
-      serverRule.getType(),
-      serverRule.getCleanCodeAttribute(),
-      serverRule.getHtmlNote(), Collections.emptyList(),
-      serverRule.getEducationPrincipleKeys(),
-      null); // TODO get vulnerability probability from storage?
+    return new RuleDetails(activeRuleFromStorage.getRuleKey(), serverRule.getLanguage(), serverRule.getName(),
+      new Descriptions(serverRule.getHtmlDesc(),
+        serverRule.getDescriptionSections().stream()
+          .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
+          .collect(Collectors.groupingBy(DescriptionSection::getKey)),
+        serverRule.getHtmlNote()),
+      new Classification(serverRule.getImpacts(),
+        Optional.ofNullable(activeRuleFromStorage.getSeverity()).orElse(serverRule.getSeverity()),
+        serverRule.getType(),
+        serverRule.getCleanCodeAttribute(),
+        // TODO get vulnerability probability from storage?
+        null),
+      Collections.emptyList(),
+      serverRule.getEducationPrincipleKeys());
   }
 
   public static RuleDetails merging(ServerRule activeRuleFromServer, SonarLintRuleDefinition ruleDefFromPlugin, boolean skipCleanCodeTaxonomy) {
     var cleanCodeAttribute = skipCleanCodeTaxonomy ? null : ruleDefFromPlugin.getCleanCodeAttribute().orElse(CleanCodeAttribute.defaultCleanCodeAttribute());
     var defaultImpacts = skipCleanCodeTaxonomy ? Map.<SoftwareQuality, ImpactSeverity>of() : ruleDefFromPlugin.getDefaultImpacts();
-    return new RuleDetails(ruleDefFromPlugin.getKey(), ruleDefFromPlugin.getLanguage(), ruleDefFromPlugin.getName(), ruleDefFromPlugin.getHtmlDescription(),
-      ruleDefFromPlugin.getDescriptionSections().stream()
-        .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
-        .collect(Collectors.groupingBy(DescriptionSection::getKey)),
-      defaultImpacts,
-      Optional.ofNullable(activeRuleFromServer.getSeverity()).orElse(ruleDefFromPlugin.getDefaultSeverity()), ruleDefFromPlugin.getType(),
-      cleanCodeAttribute,
-      activeRuleFromServer.getHtmlNote(), Collections.emptyList(), ruleDefFromPlugin.getEducationPrincipleKeys(), ruleDefFromPlugin.getVulnerabilityProbability().orElse(null));
+    return new RuleDetails(ruleDefFromPlugin.getKey(), ruleDefFromPlugin.getLanguage(), ruleDefFromPlugin.getName(),
+      new Descriptions(ruleDefFromPlugin.getHtmlDescription(),
+        ruleDefFromPlugin.getDescriptionSections().stream()
+          .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
+          .collect(Collectors.groupingBy(DescriptionSection::getKey)),
+        activeRuleFromServer.getHtmlNote()),
+      new Classification(defaultImpacts,
+        Optional.ofNullable(activeRuleFromServer.getSeverity()).orElse(ruleDefFromPlugin.getDefaultSeverity()), ruleDefFromPlugin.getType(),
+        cleanCodeAttribute,
+        ruleDefFromPlugin.getVulnerabilityProbability().orElse(null)),
+      Collections.emptyList(), ruleDefFromPlugin.getEducationPrincipleKeys());
   }
 
   public static RuleDetails merging(ServerActiveRule activeRuleFromStorage, ServerRule serverRule, SonarLintRuleDefinition templateRuleDefFromPlugin,
@@ -144,16 +156,17 @@ public class RuleDetails {
       activeRuleFromStorage.getRuleKey(),
       templateRuleDefFromPlugin.getLanguage(),
       serverRule.getName(),
-      serverRule.getHtmlDesc(),
-      serverRule.getDescriptionSections().stream()
-        .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
-        .collect(Collectors.groupingBy(DescriptionSection::getKey)),
-      mergeImpacts(defaultImpacts, activeRuleFromStorage.getOverriddenImpacts()),
-      serverRule.getSeverity(),
-      serverRule.getType(),
-      cleanCodeAttribute,
-      serverRule.getHtmlNote(),
-      Collections.emptyList(), templateRuleDefFromPlugin.getEducationPrincipleKeys(), templateRuleDefFromPlugin.getVulnerabilityProbability().orElse(null));
+      new Descriptions(serverRule.getHtmlDesc(),
+        serverRule.getDescriptionSections().stream()
+          .map(s -> new DescriptionSection(s.getKey(), s.getHtmlContent(), s.getContext().map(c -> new DescriptionSection.Context(c.getKey(), c.getDisplayName()))))
+          .collect(Collectors.groupingBy(DescriptionSection::getKey)),
+        serverRule.getHtmlNote()),
+      new Classification(mergeImpacts(defaultImpacts, activeRuleFromStorage.getOverriddenImpacts()),
+        serverRule.getSeverity(),
+        serverRule.getType(),
+        cleanCodeAttribute,
+        templateRuleDefFromPlugin.getVulnerabilityProbability().orElse(null)),
+      Collections.emptyList(), templateRuleDefFromPlugin.getEducationPrincipleKeys());
   }
 
   public static Map<SoftwareQuality, ImpactSeverity> mergeImpacts(Map<SoftwareQuality, ImpactSeverity> defaultImpacts,
@@ -184,16 +197,16 @@ public class RuleDetails {
     return new RuleDetails(serverActiveRuleDetails.getKey(),
       serverActiveRuleDetails.getLanguage(),
       serverActiveRuleDetails.getName(),
-      serverActiveRuleDetails.getHtmlDescription(),
-      serverActiveRuleDetails.getDescriptionSectionsByKey(),
-      softwareImpacts,
-      isMQRMode ? null : IssueSeverity.valueOf(raisedFindingDto.getSeverityMode().getLeft().getSeverity().toString()),
-      isMQRMode ? null : RuleType.valueOf(raisedFindingDto.getSeverityMode().getLeft().getType().toString()),
-      isMQRMode ? CleanCodeAttribute.valueOf(raisedFindingDto.getSeverityMode().getRight().getCleanCodeAttribute().name()) : null,
-      serverActiveRuleDetails.getExtendedDescription(),
+      new Descriptions(serverActiveRuleDetails.getHtmlDescription(),
+        serverActiveRuleDetails.getDescriptionSectionsByKey(),
+        serverActiveRuleDetails.getExtendedDescription()),
+      new Classification(softwareImpacts,
+        isMQRMode ? null : IssueSeverity.valueOf(raisedFindingDto.getSeverityMode().getLeft().getSeverity().toString()),
+        isMQRMode ? null : RuleType.valueOf(raisedFindingDto.getSeverityMode().getLeft().getType().toString()),
+        isMQRMode ? CleanCodeAttribute.valueOf(raisedFindingDto.getSeverityMode().getRight().getCleanCodeAttribute().name()) : null,
+        serverActiveRuleDetails.getVulnerabilityProbability()),
       serverActiveRuleDetails.getParams(),
-      serverActiveRuleDetails.educationPrincipleKeys,
-      serverActiveRuleDetails.getVulnerabilityProbability());
+      serverActiveRuleDetails.educationPrincipleKeys);
   }
 
   public static RuleDetails merging(RuleDetails serverActiveRuleDetails, TaintVulnerabilityDto taintVulnerabilityDto) {
@@ -208,16 +221,16 @@ public class RuleDetails {
     return new RuleDetails(serverActiveRuleDetails.getKey(),
       serverActiveRuleDetails.getLanguage(),
       serverActiveRuleDetails.getName(),
-      serverActiveRuleDetails.getHtmlDescription(),
-      serverActiveRuleDetails.getDescriptionSectionsByKey(),
-      softwareImpacts,
-      isMQRMode ? null : IssueSeverity.valueOf(taintVulnerabilityDto.getSeverityMode().getLeft().getSeverity().toString()),
-      isMQRMode ? null : RuleType.valueOf(taintVulnerabilityDto.getSeverityMode().getLeft().getType().toString()),
-      isMQRMode ? CleanCodeAttribute.valueOf(taintVulnerabilityDto.getSeverityMode().getRight().getCleanCodeAttribute().name()) : null,
-      serverActiveRuleDetails.getExtendedDescription(),
+      new Descriptions(serverActiveRuleDetails.getHtmlDescription(),
+        serverActiveRuleDetails.getDescriptionSectionsByKey(),
+        serverActiveRuleDetails.getExtendedDescription()),
+      new Classification(softwareImpacts,
+        isMQRMode ? null : IssueSeverity.valueOf(taintVulnerabilityDto.getSeverityMode().getLeft().getSeverity().toString()),
+        isMQRMode ? null : RuleType.valueOf(taintVulnerabilityDto.getSeverityMode().getLeft().getType().toString()),
+        isMQRMode ? CleanCodeAttribute.valueOf(taintVulnerabilityDto.getSeverityMode().getRight().getCleanCodeAttribute().name()) : null,
+        serverActiveRuleDetails.getVulnerabilityProbability()),
       serverActiveRuleDetails.getParams(),
-      serverActiveRuleDetails.educationPrincipleKeys,
-      serverActiveRuleDetails.getVulnerabilityProbability());
+      serverActiveRuleDetails.educationPrincipleKeys);
   }
 
   public String getKey() {
