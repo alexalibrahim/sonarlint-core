@@ -24,6 +24,9 @@ import java.nio.file.Path;
 import java.util.Optional;
 import org.sonarsource.sonarlint.core.commons.NewCodeDefinition;
 import org.sonarsource.sonarlint.core.commons.NewCodeMode;
+import org.sonarsource.sonarlint.core.commons.NewCodeNumberOfDaysWithDate;
+import org.sonarsource.sonarlint.core.commons.NewCodePreviousVersion;
+import org.sonarsource.sonarlint.core.commons.NewCodeReferenceBranch;
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger;
 import org.sonarsource.sonarlint.core.serverconnection.FileUtils;
 import org.sonarsource.sonarlint.core.serverconnection.proto.Sonarlint;
@@ -58,18 +61,18 @@ public class NewCodeDefinitionStorage {
     var builder = Sonarlint.NewCodeDefinition.newBuilder()
       .setMode(Sonarlint.NewCodeDefinitionMode.valueOf(newCodeDefinition.getMode().name()));
     if (newCodeDefinition.getMode() == NewCodeMode.NUMBER_OF_DAYS) {
-      var newCodeNumberOfDays = (NewCodeDefinition.NewCodeNumberOfDaysWithDate) newCodeDefinition;
+      var newCodeNumberOfDays = (NewCodeNumberOfDaysWithDate) newCodeDefinition;
       builder.setDays(newCodeNumberOfDays.getDays());
     }
     if (newCodeDefinition.getMode() != NewCodeMode.REFERENCE_BRANCH) {
       var newCodeDefinitionWithDate = (NewCodeDefinition.NewCodeDefinitionWithDate) newCodeDefinition;
       builder.setThresholdDate(newCodeDefinitionWithDate.getThresholdDate().toEpochMilli());
     } else {
-      var newCodeReferenceBranch = (NewCodeDefinition.NewCodeReferenceBranch) newCodeDefinition;
+      var newCodeReferenceBranch = (NewCodeReferenceBranch) newCodeDefinition;
       builder.setReferenceBranch(newCodeReferenceBranch.getBranchName());
     }
     if (newCodeDefinition.getMode() == NewCodeMode.PREVIOUS_VERSION) {
-      var newCodePreviousVersion = (NewCodeDefinition.NewCodePreviousVersion) newCodeDefinition;
+      var newCodePreviousVersion = (NewCodePreviousVersion) newCodeDefinition;
       var version = newCodePreviousVersion.getVersion();
       if (version != null) {
         builder.setVersion(version);
