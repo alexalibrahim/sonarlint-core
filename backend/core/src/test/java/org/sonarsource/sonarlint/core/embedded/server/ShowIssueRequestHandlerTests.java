@@ -310,39 +310,35 @@ class ShowIssueRequestHandlerTests {
 
   @Test
   void should_validate_issue_query_for_sq() {
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", "pullRequest", null, null, null,
-      SonarCloudRegion.US, false).isValid()).isTrue();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "", "pullRequest", null, null, null, SonarCloudRegion.EU, false).isValid()).isTrue();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", null, "pullRequest", null, null, null, SonarCloudRegion.EU, false).isValid()).isTrue();
+    var sqUs = new ShowIssueRequestHandler.ServerParams("serverUrl", null, SonarCloudRegion.US, false);
+    var sqEu = new ShowIssueRequestHandler.ServerParams("serverUrl", null, SonarCloudRegion.EU, false);
+    var emptyUrlEu = new ShowIssueRequestHandler.ServerParams("", null, SonarCloudRegion.EU, false);
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqUs, "project", "issue", "branch", "pullRequest", null, null).isValid()).isTrue();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqEu, "project", "issue", "", "pullRequest", null, null).isValid()).isTrue();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqEu, "project", "issue", null, "pullRequest", null, null).isValid()).isTrue();
 
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("", "project", "issue", "branch", "pullRequest", null, null, null, SonarCloudRegion.EU, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "", "issue", "branch", "pullRequest", null, null, null, SonarCloudRegion.EU, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "", "branch", "pullRequest", null, null, null, SonarCloudRegion.EU, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "", "", null, null, null, SonarCloudRegion.EU, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", null, null, null, null, SonarCloudRegion.EU, false).isValid()).isTrue();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(emptyUrlEu, "project", "issue", "branch", "pullRequest", null, null).isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqEu, "", "issue", "branch", "pullRequest", null, null).isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqEu, "project", "", "branch", "pullRequest", null, null).isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqEu, "project", "issue", "", "", null, null).isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqEu, "project", "issue", "branch", null, null, null).isValid()).isTrue();
 
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", "pullRequest", "name", null, null,
-      SonarCloudRegion.US, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", "pullRequest", null, "value", null,
-      SonarCloudRegion.US, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", "pullRequest", "name", "", null,
-      SonarCloudRegion.US, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", "pullRequest", "", "value", null,
-      SonarCloudRegion.US, false).isValid()).isFalse();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery("serverUrl", "project", "issue", "branch", "pullRequest", "name", "value", null, SonarCloudRegion.US, false).isValid())
-      .isTrue();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqUs, "project", "issue", "branch", "pullRequest", "name", null).isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqUs, "project", "issue", "branch", "pullRequest", null, "value").isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqUs, "project", "issue", "branch", "pullRequest", "name", "").isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqUs, "project", "issue", "branch", "pullRequest", "", "value").isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(sqUs, "project", "issue", "branch", "pullRequest", "name", "value").isValid()).isTrue();
   }
 
   @Test
   void should_validate_issue_query_for_sc() {
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(null, "project", "issue", "branch", "pullRequest", "name", "value",
-      "organizationKey", SonarCloudRegion.US, true).isValid()).isTrue();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(null, "project", "issue", "", "pullRequest", "name", "value", "organizationKey", SonarCloudRegion.US, true).isValid())
-      .isTrue();
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(null, "project", "issue", null, "pullRequest", "name", "value",
-      "organizationKey", SonarCloudRegion.US, true).isValid()).isTrue();
+    var scUs = new ShowIssueRequestHandler.ServerParams(null, "organizationKey", SonarCloudRegion.US, true);
+    var scEuNoOrg = new ShowIssueRequestHandler.ServerParams(null, null, SonarCloudRegion.EU, true);
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(scUs, "project", "issue", "branch", "pullRequest", "name", "value").isValid()).isTrue();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(scUs, "project", "issue", "", "pullRequest", "name", "value").isValid()).isTrue();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(scUs, "project", "issue", null, "pullRequest", "name", "value").isValid()).isTrue();
 
-    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(null, "project", "issue", "branch", "pullRequest", "name", "value", null, SonarCloudRegion.EU, true).isValid()).isFalse();
+    assertThat(new ShowIssueRequestHandler.ShowIssueQuery(scEuNoOrg, "project", "issue", "branch", "pullRequest", "name", "value").isValid()).isFalse();
   }
 
   @Test

@@ -28,9 +28,9 @@ public class TaskManager {
   private static final ProgressMonitor NO_OP = new NoOpProgressMonitor();
   private final ConcurrentHashMap<String, ProgressMonitor> progressMonitorsByTaskId = new ConcurrentHashMap<>();
 
-  public final void runTask(@Nullable String configurationScopeId, UUID taskId, String title, @Nullable String message, boolean indeterminate, boolean cancellable, Task task,
+  public final void runTask(@Nullable String configurationScopeId, UUID taskId, String title, boolean indeterminate, boolean cancellable, Task task,
     SonarLintCancelMonitor cancelMonitor) {
-    var progressMonitor = startProgress(configurationScopeId, taskId, title, message, indeterminate, cancellable, cancelMonitor);
+    var progressMonitor = startProgress(configurationScopeId, taskId, title, null, indeterminate, cancellable, cancelMonitor);
     progressMonitorsByTaskId.put(taskId.toString(), progressMonitor);
     try {
       System.out.println("beep");

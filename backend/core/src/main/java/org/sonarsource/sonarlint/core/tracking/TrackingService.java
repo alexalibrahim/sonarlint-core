@@ -86,19 +86,18 @@ public class TrackingService {
   private final NewCodeService newCodeService;
   private final ApplicationEventPublisher eventPublisher;
 
-  public TrackingService(SonarLintRpcClient client, ConfigurationRepository configurationRepository, SonarProjectBranchTrackingService branchTrackingService,
-    PathTranslationService pathTranslationService, FindingReportingService reportingService, KnownFindingsStorageService knownFindingsStorageService, StorageService storageService,
-    LocalOnlyIssueRepository localOnlyIssueRepository, LocalOnlyIssueStorageService localOnlyIssueStorageService, FindingsSynchronizationService findingsSynchronizationService,
-    NewCodeService newCodeService, ApplicationEventPublisher eventPublisher) {
+  public TrackingService(SonarLintRpcClient client, BindingContextServices bindingContextServices, FindingReportingService reportingService,
+    FindingsStorageServices findingsStorageServices, FindingsSynchronizationService findingsSynchronizationService, NewCodeService newCodeService,
+    ApplicationEventPublisher eventPublisher) {
     this.client = client;
-    this.configurationRepository = configurationRepository;
-    this.branchTrackingService = branchTrackingService;
-    this.pathTranslationService = pathTranslationService;
+    this.configurationRepository = bindingContextServices.getConfigurationRepository();
+    this.branchTrackingService = bindingContextServices.getBranchTrackingService();
+    this.pathTranslationService = bindingContextServices.getPathTranslationService();
     this.reportingService = reportingService;
-    this.knownFindingsStorageService = knownFindingsStorageService;
-    this.storageService = storageService;
-    this.localOnlyIssueRepository = localOnlyIssueRepository;
-    this.localOnlyIssueStorageService = localOnlyIssueStorageService;
+    this.knownFindingsStorageService = findingsStorageServices.getKnownFindingsStorageService();
+    this.storageService = findingsStorageServices.getStorageService();
+    this.localOnlyIssueRepository = findingsStorageServices.getLocalOnlyIssueRepository();
+    this.localOnlyIssueStorageService = findingsStorageServices.getLocalOnlyIssueStorageService();
     this.findingsSynchronizationService = findingsSynchronizationService;
     this.newCodeService = newCodeService;
     this.eventPublisher = eventPublisher;
