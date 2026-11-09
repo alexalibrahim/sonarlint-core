@@ -48,9 +48,22 @@ class AnalyzeCommandTest {
 
   @Test
   void it_should_rethrow_an_exception_when_stopping_a_transient_module_container() {
-    var analyzeCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.AUTO, () -> AnalysisConfiguration.builder().addInputFiles(new InMemoryTestClientInputFile("", "path", null, false, null)).build(), issue -> {
-    }, null, new SonarLintCancelMonitor(), new TaskManager(), inputFiles -> {
-    }, () -> true, List.of(), Map.of());
+    var analyzeCommand = AnalyzeCommand.builder()
+      .setModuleKey("moduleKey")
+      .setAnalysisId(UUID.randomUUID())
+      .setTriggerType(TriggerType.AUTO)
+      .setConfigurationSupplier(() -> AnalysisConfiguration.builder().addInputFiles(new InMemoryTestClientInputFile("", "path", null, false, null)).build())
+      .setIssueListener(issue -> {
+      })
+      .setTrace(null)
+      .setCancelMonitor(new SonarLintCancelMonitor())
+      .setTaskManager(new TaskManager())
+      .setAnalysisStarted(inputFiles -> {
+      })
+      .setIsReadySupplier(() -> true)
+      .setFiles(List.of())
+      .setExtraProperties(Map.of())
+      .build();
     var moduleRegistry = mock(ModuleRegistry.class);
     var moduleContainer = mock(ModuleContainer.class);
     when(moduleContainer.isTransient()).thenReturn(true);

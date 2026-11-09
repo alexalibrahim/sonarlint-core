@@ -709,11 +709,20 @@ public class AnalysisService {
     boolean shouldFetchServerIssues, TriggerType triggerType, SonarLintCancelMonitor cancelChecker) {
     var ruleDetailsCache = new ConcurrentHashMap<String, RuleDetailsForAnalysis>();
     var rawIssues = new ArrayList<RawIssue>();
-    var analysisTask = new AnalyzeCommand(configurationScopeId, analysisId, triggerType,
-      () -> getAnalysisConfigForEngine(configurationScopeId, files, extraProperties, false, triggerType),
-      issue -> streamIssue(configurationScopeId, analysisId, ruleDetailsCache, rawIssues, issue), monitoringService.newTrace("AnalysisService", "analyze"), cancelChecker,
-      taskManager, inputFiles -> analysisStarted(configurationScopeId, analysisId, inputFiles), () -> analysisReadinessByConfigScopeId.getOrDefault(configurationScopeId, false),
-      files, extraProperties);
+    var analysisTask = AnalyzeCommand.builder()
+      .setModuleKey(configurationScopeId)
+      .setAnalysisId(analysisId)
+      .setTriggerType(triggerType)
+      .setConfigurationSupplier(() -> getAnalysisConfigForEngine(configurationScopeId, files, extraProperties, false, triggerType))
+      .setIssueListener(issue -> streamIssue(configurationScopeId, analysisId, ruleDetailsCache, rawIssues, issue))
+      .setTrace(monitoringService.newTrace("AnalysisService", "analyze"))
+      .setCancelMonitor(cancelChecker)
+      .setTaskManager(taskManager)
+      .setAnalysisStarted(inputFiles -> analysisStarted(configurationScopeId, analysisId, inputFiles))
+      .setIsReadySupplier(() -> analysisReadinessByConfigScopeId.getOrDefault(configurationScopeId, false))
+      .setFiles(files)
+      .setExtraProperties(extraProperties)
+      .build();
     return schedule(configurationScopeId, analysisTask, analysisId, rawIssues, shouldFetchServerIssues);
   }
 
@@ -765,10 +774,20 @@ public class AnalysisService {
   private AnalyzeCommand getAnalyzeCommand(String configurationScopeId, List<URI> files, ArrayList<RawIssue> rawIssues, boolean hotspotsOnly, TriggerType triggerType,
     UUID analysisId) {
     var ruleDetailsCache = new ConcurrentHashMap<String, RuleDetailsForAnalysis>();
-    return new AnalyzeCommand(configurationScopeId, analysisId, triggerType, () -> getAnalysisConfigForEngine(configurationScopeId, files, Map.of(), hotspotsOnly, triggerType),
-      issue -> streamIssue(configurationScopeId, analysisId, ruleDetailsCache, rawIssues, issue), monitoringService.newTrace("AnalysisService", "analyze"),
-      new SonarLintCancelMonitor(), taskManager, inputFiles -> analysisStarted(configurationScopeId, analysisId, inputFiles),
-      () -> analysisReadinessByConfigScopeId.getOrDefault(configurationScopeId, false), files, Map.of());
+    return AnalyzeCommand.builder()
+      .setModuleKey(configurationScopeId)
+      .setAnalysisId(analysisId)
+      .setTriggerType(triggerType)
+      .setConfigurationSupplier(() -> getAnalysisConfigForEngine(configurationScopeId, files, Map.of(), hotspotsOnly, triggerType))
+      .setIssueListener(issue -> streamIssue(configurationScopeId, analysisId, ruleDetailsCache, rawIssues, issue))
+      .setTrace(monitoringService.newTrace("AnalysisService", "analyze"))
+      .setCancelMonitor(new SonarLintCancelMonitor())
+      .setTaskManager(taskManager)
+      .setAnalysisStarted(inputFiles -> analysisStarted(configurationScopeId, analysisId, inputFiles))
+      .setIsReadySupplier(() -> analysisReadinessByConfigScopeId.getOrDefault(configurationScopeId, false))
+      .setFiles(files)
+      .setExtraProperties(Map.of())
+      .build();
   }
 
   private void reanalyseOpenFiles(Predicate<String> configScopeFilter) {

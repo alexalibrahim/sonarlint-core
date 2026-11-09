@@ -217,8 +217,9 @@ public class ShowIssueRequestHandler implements HttpRequestHandler {
     } else {
       serverUrl = params.get("server");
     }
-    return new ShowIssueQuery(serverUrl, params.get("project"), params.get("issue"), params.get("branch"),
-      params.get("pullRequest"), params.get("tokenName"), params.get("tokenValue"), params.get("organizationKey"), region, isSonarCloud);
+    var serverParams = new ServerParams(serverUrl, params.get("organizationKey"), region, isSonarCloud);
+    return new ShowIssueQuery(serverParams, params.get("project"), params.get("issue"), params.get("branch"),
+      params.get("pullRequest"), params.get("tokenName"), params.get("tokenValue"));
   }
 
   @VisibleForTesting
@@ -240,18 +241,18 @@ public class ShowIssueRequestHandler implements HttpRequestHandler {
     private final SonarCloudRegion region;
     private final boolean isSonarCloud;
 
-    public ShowIssueQuery(@Nullable String serverUrl, String projectKey, String issueKey, @Nullable String branch, @Nullable String pullRequest,
-      @Nullable String tokenName, @Nullable String tokenValue, @Nullable String organizationKey, @Nullable SonarCloudRegion region, boolean isSonarCloud) {
-      this.serverUrl = serverUrl;
+    public ShowIssueQuery(ServerParams serverParams, String projectKey, String issueKey, @Nullable String branch, @Nullable String pullRequest,
+      @Nullable String tokenName, @Nullable String tokenValue) {
+      this.serverUrl = serverParams.serverUrl();
       this.projectKey = projectKey;
       this.issueKey = issueKey;
       this.branch = branch;
       this.pullRequest = pullRequest;
       this.tokenName = tokenName;
       this.tokenValue = tokenValue;
-      this.organizationKey = organizationKey;
-      this.region = region != null ? region : SonarCloudRegion.EU;
-      this.isSonarCloud = isSonarCloud;
+      this.organizationKey = serverParams.organizationKey();
+      this.region = serverParams.region() != null ? serverParams.region() : SonarCloudRegion.EU;
+      this.isSonarCloud = serverParams.isSonarCloud();
     }
 
     public boolean isValid() {
@@ -320,6 +321,10 @@ public class ShowIssueRequestHandler implements HttpRequestHandler {
     public SonarCloudRegion getRegion() {
       return region;
     }
+  }
+
+  @VisibleForTesting
+  public record ServerParams(@Nullable String serverUrl, @Nullable String organizationKey, @Nullable SonarCloudRegion region, boolean isSonarCloud) {
   }
 
 }

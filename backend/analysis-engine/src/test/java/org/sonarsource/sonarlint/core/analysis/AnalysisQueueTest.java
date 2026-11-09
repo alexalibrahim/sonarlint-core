@@ -37,7 +37,7 @@ class AnalysisQueueTest {
   @Test
   void it_should_prioritize_register_module_commands_over_analyses() throws InterruptedException {
     var analysisQueue = new AnalysisQueue();
-    analysisQueue.post(new AnalyzeCommand(null, UUID.randomUUID(), null, null, null, null, null, null, null, () -> true, List.of(), Map.of()));
+    analysisQueue.post(AnalyzeCommand.builder().setAnalysisId(UUID.randomUUID()).setIsReadySupplier(() -> true).setFiles(List.of()).setExtraProperties(Map.of()).build());
     var registerModuleCommand = new RegisterModuleCommand(null);
     analysisQueue.post(registerModuleCommand);
 

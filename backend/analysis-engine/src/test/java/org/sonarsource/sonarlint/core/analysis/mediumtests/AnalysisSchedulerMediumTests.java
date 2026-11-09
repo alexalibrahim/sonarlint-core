@@ -118,8 +118,7 @@ class AnalysisSchedulerMediumTests {
       .build();
     List<Issue> issues = new ArrayList<>();
     analysisScheduler.post(new RegisterModuleCommand(new ClientModuleInfo("moduleKey", aModuleFileSystem())));
-    var analyzeCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED, () -> analysisConfig, issues::add, null, progressMonitor, TASK_MANAGER,
-      NO_OP_ANALYSIS_STARTED_CONSUMER, ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
+    var analyzeCommand = anAnalyzeCommand(() -> analysisConfig).setIssueListener(issues::add).build();
     analysisScheduler.post(analyzeCommand);
     analyzeCommand.getFutureResult().get();
     assertThat(issues).hasSize(1);
@@ -131,10 +130,9 @@ class AnalysisSchedulerMediumTests {
 
   @Test
   void should_fail_the_future_if_the_analyze_command_execution_fails() {
-    var command = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED, () -> {
+    var command = anAnalyzeCommand(() -> {
       throw new RuntimeException("Kaboom");
-    }, issue -> {
-    }, null, progressMonitor, TASK_MANAGER, NO_OP_ANALYSIS_STARTED_CONSUMER, ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
+    }).build();
     analysisScheduler.post(command);
 
     assertThat(command.getFutureResult()).failsWithin(300, TimeUnit.MILLISECONDS)
@@ -157,8 +155,7 @@ class AnalysisSchedulerMediumTests {
       .addActiveRules(trailingCommentRule())
       .setBaseDir(baseDir)
       .build();
-    var analyzeCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED, () -> analysisConfig, NO_OP_ISSUE_LISTENER, null, progressMonitor, TASK_MANAGER,
-      inputFiles -> pause(300), ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
+    var analyzeCommand = anAnalyzeCommand(() -> analysisConfig).setAnalysisStarted(inputFiles -> pause(300)).build();
     analysisScheduler.post(analyzeCommand);
     // let the engine run the first command
     Thread.sleep(100);
@@ -184,10 +181,8 @@ class AnalysisSchedulerMediumTests {
       .addActiveRules(trailingCommentRule())
       .setBaseDir(baseDir)
       .build();
-    var analyzeCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED, () -> analysisConfig, NO_OP_ISSUE_LISTENER, null, progressMonitor, TASK_MANAGER,
-      inputFiles -> pause(300), ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
-    var secondAnalyzeCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED, () -> analysisConfig, NO_OP_ISSUE_LISTENER, null, progressMonitor,
-      TASK_MANAGER, NO_OP_ANALYSIS_STARTED_CONSUMER, ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
+    var analyzeCommand = anAnalyzeCommand(() -> analysisConfig).setAnalysisStarted(inputFiles -> pause(300)).build();
+    var secondAnalyzeCommand = anAnalyzeCommand(() -> analysisConfig).build();
     analysisScheduler.post(analyzeCommand);
     analysisScheduler.post(secondAnalyzeCommand);
     // let the engine run the first command
@@ -222,15 +217,9 @@ class AnalysisSchedulerMediumTests {
       .build();
     var issues1 = new ArrayList<>();
     var issues2 = new ArrayList<>();
-    var analyzeCommand1 = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED,
-      () -> analysisConfig, issues1::add, null, progressMonitor, TASK_MANAGER,
-      NO_OP_ANALYSIS_STARTED_CONSUMER, ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
-    var throwingCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED,
-      () -> analysisConfig, NO_OP_ISSUE_LISTENER, null, progressMonitor, TASK_MANAGER,
-      NO_OP_ANALYSIS_STARTED_CONSUMER, throwingSupplier, List.of(), Map.of());
-    var analyzeCommand2 = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED,
-      () -> analysisConfig, issues2::add, null, progressMonitor, TASK_MANAGER,
-      NO_OP_ANALYSIS_STARTED_CONSUMER, ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
+    var analyzeCommand1 = anAnalyzeCommand(() -> analysisConfig).setIssueListener(issues1::add).build();
+    var throwingCommand = anAnalyzeCommand(() -> analysisConfig).setIsReadySupplier(throwingSupplier).build();
+    var analyzeCommand2 = anAnalyzeCommand(() -> analysisConfig).setIssueListener(issues2::add).build();
 
     analysisScheduler.post(analyzeCommand1);
     analysisScheduler.post(throwingCommand);
@@ -256,8 +245,8 @@ class AnalysisSchedulerMediumTests {
       .setBaseDir(baseDir)
       .build();
     var threadTermination = new AtomicReference<String>();
-    var analyzeCommand = new AnalyzeCommand("moduleKey", UUID.randomUUID(), TriggerType.FORCED, () -> analysisConfig, NO_OP_ISSUE_LISTENER, null, progressMonitor, TASK_MANAGER,
-      inputFiles -> {
+    var analyzeCommand = anAnalyzeCommand(() -> analysisConfig)
+      .setAnalysisStarted(inputFiles -> {
         try {
           Thread.sleep(3000);
         } catch (InterruptedException e) {
@@ -265,7 +254,8 @@ class AnalysisSchedulerMediumTests {
           return;
         }
         threadTermination.set("FINISHED");
-      }, ANALYSIS_READY_SUPPLIER, List.of(), Map.of());
+      })
+      .build();
     analysisScheduler.post(analyzeCommand);
     // let the engine run the first command
     pause(200);
@@ -287,6 +277,21 @@ class AnalysisSchedulerMediumTests {
     // let the engine stop properly
     pause(1000);
     assertThat(logTester.logs(LogOutput.Level.ERROR)).isEmpty();
+  }
+
+  private AnalyzeCommand.Builder anAnalyzeCommand(Supplier<AnalysisConfiguration> configurationSupplier) {
+    return AnalyzeCommand.builder()
+      .setModuleKey("moduleKey")
+      .setAnalysisId(UUID.randomUUID())
+      .setTriggerType(TriggerType.FORCED)
+      .setConfigurationSupplier(configurationSupplier)
+      .setIssueListener(NO_OP_ISSUE_LISTENER)
+      .setCancelMonitor(progressMonitor)
+      .setTaskManager(TASK_MANAGER)
+      .setAnalysisStarted(NO_OP_ANALYSIS_STARTED_CONSUMER)
+      .setIsReadySupplier(ANALYSIS_READY_SUPPLIER)
+      .setFiles(List.of())
+      .setExtraProperties(Map.of());
   }
 
   private ClientInputFile preparePythonInputFile(Path baseDir, String content) throws IOException {
