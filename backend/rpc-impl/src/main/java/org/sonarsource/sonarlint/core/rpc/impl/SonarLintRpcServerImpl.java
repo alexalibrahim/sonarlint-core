@@ -102,7 +102,7 @@ public class SonarLintRpcServerImpl implements SonarLintRpcServer {
       .setInput(in)
       .setOutput(out)
       .setExecutorService(messageReaderExecutor)
-      .wrapMessages(m -> new SingleThreadedMessageConsumer(m, messageWriterExecutor, System.err::println))
+      .wrapMessages(m -> new SingleThreadedMessageConsumer(m, messageWriterExecutor, t -> LOG.error("Error while writing message", t)))
       .traceMessages(getMessageTracer())
       .create();
 
@@ -129,8 +129,7 @@ public class SonarLintRpcServerImpl implements SonarLintRpcServer {
       try {
         return new PrintWriter(Paths.get(System.getProperty("user.home")).resolve(".sonarlint").resolve("rpc_backend_session.log").toFile(), StandardCharsets.UTF_8);
       } catch (IOException e) {
-        System.err.println("Cannot write rpc debug logs file");
-        e.printStackTrace();
+        LOG.error("Cannot write rpc debug logs file", e);
       }
     }
     return null;
